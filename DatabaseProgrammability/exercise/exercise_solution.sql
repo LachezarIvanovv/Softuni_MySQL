@@ -59,3 +59,46 @@ BEGIN
     WHERE ufn_get_salary_level(`salary`) = salary_level
     ORDER BY `first_name`DESC, `last_name`DESC;
 END$$
+
+#07. Define Function
+
+CREATE FUNCTION ufn_is_word_comprised(set_of_letters VARCHAR(50), word VARCHAR(50))
+RETURNS INT
+DETERMINISTIC
+BEGIN
+	RETURN word REGEXP(CONCAT('^[', set_of_letters, ']+$'));
+END$$
+
+#08. Find Full Name
+
+CREATE PROCEDURE usp_get_holders_full_name()
+BEGIN
+	SELECT CONCAT(`first_name`, ' ',`last_name`) AS 'full_name' FROM `account_holders`
+    ORDER BY `full_name`;
+END$$
+
+#10. Future Value Function
+
+CREATE FUNCTION ufn_calculate_future_value(sum DECIMAL(19, 4), yearly_rate DOUBLE, years INT)
+RETURNS DECIMAL(19, 4)
+DETERMINISTIC
+BEGIN
+	DECLARE future_sum DECIMAL(19, 4);
+    SET future_sum := sum * POW(1 + yearly_rate, years);
+    RETURN future_sum;
+END$$
+
+#11. Calculating Interest
+
+CREATE PROCEDURE usp_calculate_future_value_for_account(id INT, rate DECIMAL(19, 4))
+BEGIN
+	SELECT 
+		a.`id` AS 'account_id',
+        ah.`first_name`, 
+        ah.`last_name`,
+        a.`balance`AS 'current_balance',
+        ufn_calculate_future_value(a.`balance`, rate, 5) AS 'balance_in_5_years'
+        FROM `accounts` AS a
+        JOIN `account_holders` AS ah ON a.`account_holder_id` = ah.`id`
+        WHERE a.`id` = id;
+END$$
